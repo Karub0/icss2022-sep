@@ -57,5 +57,73 @@ public class ASTListener extends ICSSBaseListener {
 		Stylerule rule = (Stylerule) currentContainer.pop();
 		((Stylesheet) currentContainer.peek()).addChild(rule);
 	}
+
+	@Override
+	public void enterSelector(ICSSParser.SelectorContext ctx) {
+		Selector selector = null;
+		if (ctx.LOWER_IDENT() != null) {
+			selector = new TagSelector(ctx.LOWER_IDENT().getText());
+		} else if (ctx.ID_IDENT() != null) {
+			selector = new IdSelector(ctx.ID_IDENT().getText());
+		} else if (ctx.CLASS_IDENT() != null) {
+			selector = new ClassSelector(ctx.CLASS_IDENT().getText());
+		}
+		if (selector != null) {
+			((Stylerule) currentContainer.peek()).addChild(selector);
+		}
+	}
+
+	@Override
+	public void enterDeclaration(ICSSParser.DeclarationContext ctx) {
+		Declaration declaration = new Declaration();
+		declaration.property = ctx.propertyName().getText();
+		currentContainer.push(declaration);
+	}
+
+	@Override
+	public void exitDeclaration(ICSSParser.DeclarationContext ctx) {
+		Declaration declaration = (Declaration) currentContainer.pop();
+		((Stylerule) currentContainer.peek()).addChild(declaration);
+	}
+
+	@Override
+	public void enterVariableAssignment(ICSSParser.VariableAssignmentContext ctx) {
+		VariableAssignment assignment = new VariableAssignment();
+		assignment.name = new VariableReference(ctx.CAPITAL_IDENT().getText());
+		currentContainer.push(assignment);
+	}
+
+	@Override
+	public void exitVariableAssignment(ICSSParser.VariableAssignmentContext ctx) {
+		VariableAssignment assignment = (VariableAssignment) currentContainer.pop();
+		((ASTNode) currentContainer.peek()).addChild(assignment);
+	}
+
+	@Override
+	public void enterLiteral(ICSSParser.LiteralContext ctx) {
+		Literal literal = null;
+
+		if (ctx.PIXELSIZE() != null) {
+			literal = new PixelLiteral(ctx.PIXELSIZE().getText().replace("px", ""));
+		} else if (ctx.PERCENTAGE() != null) {
+			literal = new PercentageLiteral(ctx.PERCENTAGE().getText().replace("%", ""));
+		} else if (ctx.SCALAR() != null) {
+			literal = new ScalarLiteral(ctx.SCALAR().getText());
+		} else if (ctx.COLOR() != null) {
+			literal = new ColorLiteral(ctx.COLOR().getText());
+		} else if (ctx.TRUE() != null) {
+			literal = new BoolLiteral(true);
+		} else if (ctx.FALSE() != null) {
+			literal = new BoolLiteral(false);
+		}
+
+		if (literal != null) {
+			currentContainer.push(literal);
+		}
+	}
+
+	@Override
+	public void exitLiteral(ICSSParser.LiteralContext ctx) {
+	}
     
 }
