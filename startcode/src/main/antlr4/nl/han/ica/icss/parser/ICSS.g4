@@ -46,7 +46,7 @@ ASSIGNMENT_OPERATOR: ':=';
 
 //--- PARSER: ---
 stylesheet
-    : (variableAssignment | stylerule)
+    : (variableAssignment | stylerule)* EOF
     ;
 
 stylerule
