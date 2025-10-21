@@ -45,5 +45,62 @@ ASSIGNMENT_OPERATOR: ':=';
 
 
 //--- PARSER: ---
-stylesheet: EOF;
+stylesheet
+    : (variableAssignment | stylerule)
+    ;
 
+stylerule
+    : selector OPEN_BRACE (variableAssignment | declaration | ifClause)* CLOSE_BRACE
+    ;
+
+selector
+    : LOWER_IDENT
+    | ID_IDENT
+    | CLASS_IDENT
+    ;
+
+declaration
+    : propertyName COLON expression SEMICOLON
+    ;
+
+propertyName
+    : 'color'
+    | 'background-color'
+    | 'width'
+    | 'height'
+    ;
+
+variableAssignment
+    : CAPITAL_IDENT ASSIGNMENT_OPERATOR expression SEMICOLON
+    ;
+
+ifClause
+    : IF BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE
+      OPEN_BRACE (variableAssignment | declaration | ifClause)* CLOSE_BRACE
+      (ELSE OPEN_BRACE (variableAssignment | declaration | ifClause)* CLOSE_BRACE)?
+    ;
+
+expression
+    : expression (PLUS | MIN) term          #addSub
+    | term                                 #singleTerm
+    ;
+
+term
+    : term MUL factor                      #mul
+    | factor                               #singleFactor
+    ;
+
+factor
+    : literal                              #literalFactor
+    | CAPITAL_IDENT                        #variableReference
+    | BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE #nestedExpression
+    ;
+
+literal
+    : PIXELSIZE
+    | PERCENTAGE
+    | SCALAR
+    | COLOR
+    | TRUE
+    | FALSE
+    ;
