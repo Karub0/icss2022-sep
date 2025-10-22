@@ -31,10 +31,6 @@ public class HANStack<T> implements IHANStack<T> {
         return items.get(items.size() - 1);
     }
 
-    public boolean isEmpty() {
-        return items.isEmpty();
-    }
-
     public int size() {
         return items.size();
     }
