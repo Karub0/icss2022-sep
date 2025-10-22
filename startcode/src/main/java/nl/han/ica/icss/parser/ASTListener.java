@@ -191,4 +191,11 @@ public class ASTListener extends ICSSBaseListener {
 		((ASTNode) currentContainer.peek()).addChild(literal);
 	}
 
+	@Override
+	public void enterVariableReference(ICSSParser.VariableReferenceContext ctx) {
+		VariableReference ref = new VariableReference(ctx.CAPITAL_IDENT().getText());
+		((ASTNode) currentContainer.peek()).addChild(ref);
+	}
+
+
 }
