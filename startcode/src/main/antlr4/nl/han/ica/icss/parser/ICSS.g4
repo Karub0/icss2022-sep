@@ -77,7 +77,11 @@ variableAssignment
 ifClause
     : IF BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE
       OPEN_BRACE (variableAssignment | declaration | ifClause)* CLOSE_BRACE
-      (ELSE OPEN_BRACE (variableAssignment | declaration | ifClause)* CLOSE_BRACE)?
+      (ELSE elseBody)?
+    ;
+
+elseBody
+    : OPEN_BRACE (variableAssignment | declaration | ifClause)* CLOSE_BRACE
     ;
 
 expression

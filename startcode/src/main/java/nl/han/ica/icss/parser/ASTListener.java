@@ -63,33 +63,43 @@ public class ASTListener extends ICSSBaseListener {
 		Selector selector = null;
 		if (ctx.LOWER_IDENT() != null) {
 			selector = new TagSelector(ctx.LOWER_IDENT().getText());
-		} else if (ctx.ID_IDENT() != null) {
-			selector = new IdSelector(ctx.ID_IDENT().getText());
 		} else if (ctx.CLASS_IDENT() != null) {
 			selector = new ClassSelector(ctx.CLASS_IDENT().getText());
+		} else if (ctx.ID_IDENT() != null) {
+			selector = new nl.han.ica.icss.ast.selectors.IdSelector(ctx.ID_IDENT().getText());
 		}
-		if (selector != null) {
-			((Stylerule) currentContainer.peek()).addChild(selector);
-		}
+		currentContainer.push(selector);
+	}
+
+	@Override
+	public void exitSelector(ICSSParser.SelectorContext ctx) {
+		Selector selector = (Selector) currentContainer.pop();
+		((Stylerule) currentContainer.peek()).addChild(selector);
 	}
 
 	@Override
 	public void enterDeclaration(ICSSParser.DeclarationContext ctx) {
 		Declaration declaration = new Declaration();
-		declaration.property = new PropertyName(ctx.propertyName().getText());
 		currentContainer.push(declaration);
 	}
 
 	@Override
 	public void exitDeclaration(ICSSParser.DeclarationContext ctx) {
 		Declaration declaration = (Declaration) currentContainer.pop();
-		((Stylerule) currentContainer.peek()).addChild(declaration);
+		((ASTNode) currentContainer.peek()).addChild(declaration);
+	}
+
+	@Override
+	public void enterPropertyName(ICSSParser.PropertyNameContext ctx) {
+		PropertyName property = new PropertyName(ctx.getText());
+		((Declaration) currentContainer.peek()).addChild(property);
 	}
 
 	@Override
 	public void enterVariableAssignment(ICSSParser.VariableAssignmentContext ctx) {
 		VariableAssignment assignment = new VariableAssignment();
-		assignment.name = new VariableReference(ctx.CAPITAL_IDENT().getText());
+		VariableReference name = new VariableReference(ctx.CAPITAL_IDENT().getText());
+		assignment.addChild(name);
 		currentContainer.push(assignment);
 	}
 
@@ -97,33 +107,6 @@ public class ASTListener extends ICSSBaseListener {
 	public void exitVariableAssignment(ICSSParser.VariableAssignmentContext ctx) {
 		VariableAssignment assignment = (VariableAssignment) currentContainer.pop();
 		((ASTNode) currentContainer.peek()).addChild(assignment);
-	}
-
-	@Override
-	public void enterLiteral(ICSSParser.LiteralContext ctx) {
-		Literal literal = null;
-
-		if (ctx.PIXELSIZE() != null) {
-			literal = new PixelLiteral(ctx.PIXELSIZE().getText().replace("px", ""));
-		} else if (ctx.PERCENTAGE() != null) {
-			literal = new PercentageLiteral(ctx.PERCENTAGE().getText().replace("%", ""));
-		} else if (ctx.SCALAR() != null) {
-			literal = new ScalarLiteral(ctx.SCALAR().getText());
-		} else if (ctx.COLOR() != null) {
-			literal = new ColorLiteral(ctx.COLOR().getText());
-		} else if (ctx.TRUE() != null) {
-			literal = new BoolLiteral(true);
-		} else if (ctx.FALSE() != null) {
-			literal = new BoolLiteral(false);
-		}
-
-		if (literal != null) {
-			currentContainer.push(literal);
-		}
-	}
-
-	@Override
-	public void exitLiteral(ICSSParser.LiteralContext ctx) {
 	}
 
 	@Override
@@ -139,29 +122,73 @@ public class ASTListener extends ICSSBaseListener {
 	}
 
 	@Override
+	public void enterElseBody(ICSSParser.ElseBodyContext ctx) {
+		ElseClause elseClause = new ElseClause();
+		currentContainer.push(elseClause);
+	}
+
+	@Override
+	public void exitElseBody(ICSSParser.ElseBodyContext ctx) {
+		ElseClause elseClause = (ElseClause) currentContainer.pop();
+		((IfClause) currentContainer.peek()).addChild(elseClause);
+	}
+
+	@Override
+	public void enterAddSub(ICSSParser.AddSubContext ctx) {
+		Operation operation = null;
+		if (ctx.PLUS() != null) {
+			operation = new AddOperation();
+		} else if (ctx.MIN() != null) {
+			operation = new SubtractOperation();
+		}
+		currentContainer.push(operation);
+	}
+
+	@Override
 	public void exitAddSub(ICSSParser.AddSubContext ctx) {
-		Expression rhs = (Expression) currentContainer.pop();
-		Expression lhs = (Expression) currentContainer.pop();
+		Operation operation = (Operation) currentContainer.pop();
+		((ASTNode) currentContainer.peek()).addChild(operation);
+	}
 
-		Operation op = (ctx.PLUS() != null)
-				? new AddOperation()
-				: new SubtractOperation();
-
-		op.lhs = lhs;
-		op.rhs = rhs;
-		currentContainer.push(op);
+	@Override
+	public void enterMul(ICSSParser.MulContext ctx) {
+		MultiplyOperation operation = new MultiplyOperation();
+		currentContainer.push(operation);
 	}
 
 	@Override
 	public void exitMul(ICSSParser.MulContext ctx) {
-		Expression rhs = (Expression) currentContainer.pop();
-		Expression lhs = (Expression) currentContainer.pop();
-
-		MultiplyOperation op = new MultiplyOperation();
-		op.lhs = lhs;
-		op.rhs = rhs;
-		currentContainer.push(op);
+		MultiplyOperation operation = (MultiplyOperation) currentContainer.pop();
+		((ASTNode) currentContainer.peek()).addChild(operation);
 	}
-	
+
+	@Override
+	public void enterSingleTerm(ICSSParser.SingleTermContext ctx) {
+
+	}
+
+	@Override
+	public void enterSingleFactor(ICSSParser.SingleFactorContext ctx) {
+
+	}
+
+	@Override
+	public void enterLiteralFactor(ICSSParser.LiteralFactorContext ctx) {
+		Literal literal = null;
+
+		if (ctx.literal().PIXELSIZE() != null) {
+			literal = new PixelLiteral(ctx.literal().PIXELSIZE().getText());
+		} else if (ctx.literal().PERCENTAGE() != null) {
+			literal = new PercentageLiteral(ctx.literal().PERCENTAGE().getText());
+		} else if (ctx.literal().COLOR() != null) {
+			literal = new ColorLiteral(ctx.literal().COLOR().getText());
+		} else if (ctx.literal().TRUE() != null || ctx.literal().FALSE() != null) {
+			literal = new BoolLiteral(ctx.literal().getText());
+		} else if (ctx.literal().SCALAR() != null) {
+			literal = new ScalarLiteral(ctx.literal().SCALAR().getText());
+		}
+
+		((ASTNode) currentContainer.peek()).addChild(literal);
+	}
 
 }
