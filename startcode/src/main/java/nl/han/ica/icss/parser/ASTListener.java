@@ -76,7 +76,7 @@ public class ASTListener extends ICSSBaseListener {
 	@Override
 	public void enterDeclaration(ICSSParser.DeclarationContext ctx) {
 		Declaration declaration = new Declaration();
-		declaration.property = ctx.propertyName().getText();
+		declaration.property = new PropertyName(ctx.propertyName().getText());
 		currentContainer.push(declaration);
 	}
 
@@ -125,5 +125,43 @@ public class ASTListener extends ICSSBaseListener {
 	@Override
 	public void exitLiteral(ICSSParser.LiteralContext ctx) {
 	}
-    
+
+	@Override
+	public void enterIfClause(ICSSParser.IfClauseContext ctx) {
+		IfClause ifClause = new IfClause();
+		currentContainer.push(ifClause);
+	}
+
+	@Override
+	public void exitIfClause(ICSSParser.IfClauseContext ctx) {
+		IfClause ifClause = (IfClause) currentContainer.pop();
+		((ASTNode) currentContainer.peek()).addChild(ifClause);
+	}
+
+	@Override
+	public void exitAddSub(ICSSParser.AddSubContext ctx) {
+		Expression rhs = (Expression) currentContainer.pop();
+		Expression lhs = (Expression) currentContainer.pop();
+
+		Operation op = (ctx.PLUS() != null)
+				? new AddOperation()
+				: new SubtractOperation();
+
+		op.lhs = lhs;
+		op.rhs = rhs;
+		currentContainer.push(op);
+	}
+
+	@Override
+	public void exitMul(ICSSParser.MulContext ctx) {
+		Expression rhs = (Expression) currentContainer.pop();
+		Expression lhs = (Expression) currentContainer.pop();
+
+		MultiplyOperation op = new MultiplyOperation();
+		op.lhs = lhs;
+		op.rhs = rhs;
+		currentContainer.push(op);
+	}
+	
+
 }
