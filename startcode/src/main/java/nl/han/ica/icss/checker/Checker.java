@@ -2,10 +2,11 @@ package nl.han.ica.icss.checker;
 
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.ast.*;
+import nl.han.ica.icss.ast.literals.*;
+import nl.han.ica.icss.ast.operations.*;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.HashMap;
-
 
 
 public class Checker {
@@ -14,6 +15,8 @@ public class Checker {
 
     public void check(AST ast) {
         variableTypes = new HANLinkedList<>();
+
+        checkStylesheet(ast.root);
 
     }
 
@@ -41,6 +44,18 @@ public class Checker {
         variableTypes.removeFirst();
     }
 
+    private void checkVariableAssignment(VariableAssignment assignment) {
+        ExpressionType type = null;
+
+        if (assignment.expression instanceof PixelLiteral) type = ExpressionType.PIXEL;
+        else if (assignment.expression instanceof PercentageLiteral) type = ExpressionType.PERCENTAGE;
+        else if (assignment.expression instanceof ColorLiteral) type = ExpressionType.COLOR;
+        else if (assignment.expression instanceof BoolLiteral) type = ExpressionType.BOOL;
+        else if (assignment.expression instanceof ScalarLiteral) type = ExpressionType.SCALAR;
+
+        variableTypes.getFirst().put(assignment.name.name, type);
+    }
+    
 
 
     
