@@ -15,6 +15,7 @@ public class Checker {
 
     public void check(AST ast) {
         variableTypes = new HANLinkedList<>();
+        variableTypes.addFirst(new HashMap<>());
 
         checkStylesheet(ast.root);
 
@@ -38,6 +39,8 @@ public class Checker {
                 checkDeclaration((Declaration) child);
             } else if (child instanceof IfClause) {
                 checkIfClause((IfClause) child);
+            } else if (child instanceof VariableAssignment) {
+                checkVariableAssignment((VariableAssignment) child);
             }
         }
 
@@ -55,7 +58,7 @@ public class Checker {
 
         variableTypes.getFirst().put(assignment.name.name, type);
     }
-    
+
 
 
     
