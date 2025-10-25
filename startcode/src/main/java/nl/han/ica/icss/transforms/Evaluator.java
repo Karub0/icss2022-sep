@@ -11,6 +11,7 @@ import nl.han.ica.icss.ast.operations.SubtractOperation;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
 
 public class Evaluator implements Transform {
@@ -42,7 +43,18 @@ public class Evaluator implements Transform {
 
     private void evaluateVariableAssignment(VariableAssignment assignment) {
         Literal literal = evaluateExpression(assignment.expression);
-        variableValues.peek().put(assignment.name.name, literal);
+
+        boolean updated = false;
+        for (HashMap<String, Literal> scope : variableValues) {
+            if (scope.containsKey(assignment.name.name)) {
+                scope.put(assignment.name.name, literal);
+                updated = true;
+                break;
+            }
+        }
+        if (!updated) {
+            variableValues.peek().put(assignment.name.name, literal);
+        }
     }
 
     private void evaluateStylerule(Stylerule rule) {
@@ -60,7 +72,7 @@ public class Evaluator implements Transform {
                 iterator.remove();
 
             } else if (child instanceof IfClause) {
-                evaluateIfClause((IfClause) child, iterator);
+                evaluateIfClause((IfClause) child, rule);
             }
         }
 
@@ -149,35 +161,28 @@ public class Evaluator implements Transform {
         return left;
     }
 
-    private void evaluateIfClause(IfClause ifClause, ListIterator<ASTNode> iterator) {
+    private void evaluateIfClause(IfClause ifClause, Stylerule rule) {
         Literal conditionValue = evaluateExpression(ifClause.conditionalExpression);
         boolean conditionTrue = conditionValue instanceof BoolLiteral && ((BoolLiteral) conditionValue).value;
-
         variableValues.push(new HashMap<>());
-        if (conditionTrue) {
-            for (ASTNode child : ifClause.body) {
+
+        List<ASTNode> branch = conditionTrue ? ifClause.body :
+                (ifClause.elseClause != null ? ifClause.elseClause.body : null);
+
+        if (branch != null) {
+            for (ASTNode child : branch) {
                 if (child instanceof Declaration) {
                     evaluateDeclaration((Declaration) child);
-                    iterator.add(child);
+                    
+                    rule.body.removeIf(node -> node instanceof Declaration &&
+                            ((Declaration) node).property.name.equals(((Declaration) child).property.name));
+                    rule.body.add(child);
 
                 } else if (child instanceof VariableAssignment) {
                     evaluateVariableAssignment((VariableAssignment) child);
 
                 } else if (child instanceof IfClause) {
-                    evaluateIfClause((IfClause) child, iterator);
-                }
-            }
-        } else if (ifClause.elseClause != null) {
-            for (ASTNode child : ifClause.elseClause.body) {
-                if (child instanceof Declaration) {
-                    evaluateDeclaration((Declaration) child);
-                    iterator.add(child);
-
-                } else if (child instanceof VariableAssignment) {
-                    evaluateVariableAssignment((VariableAssignment) child);
-
-                } else if (child instanceof IfClause) {
-                    evaluateIfClause((IfClause) child, iterator);
+                    evaluateIfClause((IfClause) child, rule);
                 }
             }
         }
