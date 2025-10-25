@@ -1,6 +1,5 @@
 package nl.han.ica.icss.transforms;
 
-import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.PercentageLiteral;
 import nl.han.ica.icss.ast.literals.PixelLiteral;
@@ -62,7 +61,88 @@ public class Evaluator implements Transform {
         variableValues.pop();
     }
 
+    private void evaluateDeclaration(Declaration declaration) {
+        declaration.expression = evaluateExpression(declaration.expression);
+    }
 
+    private Literal evaluateExpression(Expression expression) {
+        if (expression instanceof Literal) {
+            return (Literal) expression;
+        } else if (expression instanceof VariableReference) {
+            return resolveVariable((VariableReference) expression);
+        } else if (expression instanceof Operation) {
+            return evaluateOperation((Operation) expression);
+        }
+        return null;
+    }
 
+    private Literal resolveVariable(VariableReference reference) {
+        for (HashMap<String, Literal> scope : variableValues) {
+            if (scope.containsKey(reference.name)) {
+                return scope.get(reference.name);
+            }
+        }
+        return new ScalarLiteral(0);
+    }
 
+    private Literal evaluateOperation(Operation operation) {
+        Literal left = evaluateExpression(operation.lhs);
+        Literal right = evaluateExpression(operation.rhs);
+
+        if (operation instanceof AddOperation) {
+            return evaluateAddSub(left, right, true);
+        } else if (operation instanceof SubtractOperation) {
+            return evaluateAddSub(left, right, false);
+        } else if (operation instanceof MultiplyOperation) {
+            return evaluateMultiply(left, right);
+        }
+        return null;
+    }
+
+    private Literal evaluateAddSub(Literal left, Literal right, boolean isAdd) {
+        if (left instanceof PixelLiteral && right instanceof PixelLiteral) {
+            int result = ((PixelLiteral) left).value + (isAdd ? ((PixelLiteral) right).value : -((PixelLiteral) right).value);
+            return new PixelLiteral(result);
+
+        } else if (left instanceof PercentageLiteral && right instanceof PercentageLiteral) {
+            int result = ((PercentageLiteral) left).value + (isAdd ? ((PercentageLiteral) right).value : -((PercentageLiteral) right).value);
+            return new PercentageLiteral(result);
+
+        } else if (left instanceof ScalarLiteral && right instanceof ScalarLiteral) {
+            int result = ((ScalarLiteral) left).value + (isAdd ? ((ScalarLiteral) right).value : -((ScalarLiteral) right).value);
+            return new ScalarLiteral(result);
+        }
+        return left;
+    }
+
+    private Literal evaluateMultiply(Literal left, Literal right) {
+        if (left instanceof ScalarLiteral && right instanceof ScalarLiteral) {
+            int result = ((ScalarLiteral) left).value * ((ScalarLiteral) right).value;
+            return new ScalarLiteral(result);
+
+        } else if (left instanceof ScalarLiteral && right instanceof PixelLiteral) {
+            int result = ((ScalarLiteral) left).value * ((PixelLiteral) right).value;
+            return new PixelLiteral(result);
+
+        } else if (left instanceof PixelLiteral && right instanceof ScalarLiteral) {
+            int result = ((PixelLiteral) left).value * ((ScalarLiteral) right).value;
+            return new PixelLiteral(result);
+
+        } else if (left instanceof ScalarLiteral && right instanceof PercentageLiteral) {
+            int result = ((ScalarLiteral) left).value * ((PercentageLiteral) right).value;
+            return new PercentageLiteral(result);
+
+        } else if (left instanceof PercentageLiteral && right instanceof ScalarLiteral) {
+            int result = ((PercentageLiteral) left).value * ((ScalarLiteral) right).value;
+            return new PercentageLiteral(result);
+        }
+        return left;
+    }
 }
+
+
+
+
+
+
+
