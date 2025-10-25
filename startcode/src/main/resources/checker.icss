@@ -1,0 +1,25 @@
+/* test */
+
+MainColor := #ff0000;
+BaseWidth := 20px;
+
+p {
+    background-color: UndefinedVar;
+    width: 10px + 5%;
+    height: #00ff00 * 2;
+    color: 25px;
+    width: #ff0000;
+
+    if[10px] {
+        background-color: #000000;
+    }
+    if[TRUE] {
+        InnerVar := 50px;
+        height: InnerVar;
+    }
+    width: InnerVar;
+}
+
+a {
+    color: MainColor;
+}
