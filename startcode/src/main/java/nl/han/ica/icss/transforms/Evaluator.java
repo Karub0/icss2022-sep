@@ -173,7 +173,7 @@ public class Evaluator implements Transform {
             for (ASTNode child : branch) {
                 if (child instanceof Declaration) {
                     evaluateDeclaration((Declaration) child);
-                    
+
                     rule.body.removeIf(node -> node instanceof Declaration &&
                             ((Declaration) node).property.name.equals(((Declaration) child).property.name));
                     rule.body.add(child);
