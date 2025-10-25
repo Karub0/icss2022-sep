@@ -4,6 +4,7 @@ import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.PercentageLiteral;
 import nl.han.ica.icss.ast.literals.PixelLiteral;
 import nl.han.ica.icss.ast.literals.ScalarLiteral;
+import nl.han.ica.icss.ast.literals.BoolLiteral;
 import nl.han.ica.icss.ast.operations.AddOperation;
 import nl.han.ica.icss.ast.operations.MultiplyOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
@@ -32,6 +33,7 @@ public class Evaluator implements Transform {
         for (ASTNode child : sheet.getChildren()) {
             if (child instanceof VariableAssignment) {
                 evaluateVariableAssignment((VariableAssignment) child);
+
             } else if (child instanceof Stylerule) {
                 evaluateStylerule((Stylerule) child);
             }
@@ -52,9 +54,13 @@ public class Evaluator implements Transform {
 
             if (child instanceof Declaration) {
                 evaluateDeclaration((Declaration) child);
+
             } else if (child instanceof VariableAssignment) {
                 evaluateVariableAssignment((VariableAssignment) child);
                 iterator.remove();
+
+            } else if (child instanceof IfClause) {
+                evaluateIfClause((IfClause) child, iterator);
             }
         }
 
@@ -68,15 +74,17 @@ public class Evaluator implements Transform {
     private Literal evaluateExpression(Expression expression) {
         if (expression instanceof Literal) {
             return (Literal) expression;
+
         } else if (expression instanceof VariableReference) {
-            return resolveVariable((VariableReference) expression);
+            return evaluateVariable((VariableReference) expression);
+
         } else if (expression instanceof Operation) {
             return evaluateOperation((Operation) expression);
         }
         return null;
     }
 
-    private Literal resolveVariable(VariableReference reference) {
+    private Literal evaluateVariable(VariableReference reference) {
         for (HashMap<String, Literal> scope : variableValues) {
             if (scope.containsKey(reference.name)) {
                 return scope.get(reference.name);
@@ -91,8 +99,10 @@ public class Evaluator implements Transform {
 
         if (operation instanceof AddOperation) {
             return evaluateAddSub(left, right, true);
+
         } else if (operation instanceof SubtractOperation) {
             return evaluateAddSub(left, right, false);
+
         } else if (operation instanceof MultiplyOperation) {
             return evaluateMultiply(left, right);
         }
@@ -138,6 +148,42 @@ public class Evaluator implements Transform {
         }
         return left;
     }
+
+    private void evaluateIfClause(IfClause ifClause, ListIterator<ASTNode> iterator) {
+        Literal conditionValue = evaluateExpression(ifClause.conditionalExpression);
+        boolean conditionTrue = conditionValue instanceof BoolLiteral && ((BoolLiteral) conditionValue).value;
+
+        variableValues.push(new HashMap<>());
+        if (conditionTrue) {
+            for (ASTNode child : ifClause.body) {
+                if (child instanceof Declaration) {
+                    evaluateDeclaration((Declaration) child);
+                    iterator.add(child);
+
+                } else if (child instanceof VariableAssignment) {
+                    evaluateVariableAssignment((VariableAssignment) child);
+
+                } else if (child instanceof IfClause) {
+                    evaluateIfClause((IfClause) child, iterator);
+                }
+            }
+        } else if (ifClause.elseClause != null) {
+            for (ASTNode child : ifClause.elseClause.body) {
+                if (child instanceof Declaration) {
+                    evaluateDeclaration((Declaration) child);
+                    iterator.add(child);
+
+                } else if (child instanceof VariableAssignment) {
+                    evaluateVariableAssignment((VariableAssignment) child);
+
+                } else if (child instanceof IfClause) {
+                    evaluateIfClause((IfClause) child, iterator);
+                }
+            }
+        }
+        variableValues.pop();
+    }
+
 }
 
 
