@@ -7,14 +7,15 @@ import nl.han.ica.icss.ast.operations.*;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 
 
 public class Checker {
 
-    private IHANLinkedList<HashMap<String, ExpressionType>> variableTypes;
+    private LinkedList<HashMap<String, ExpressionType>> variableTypes;
 
     public void check(AST ast) {
-        variableTypes = new HANLinkedList<>();
+        variableTypes = new LinkedList<>();
         variableTypes.addFirst(new HashMap<>());
 
         checkStylesheet(ast.root);
@@ -83,13 +84,13 @@ public class Checker {
 
         if (type instanceof VariableReference) {
             VariableReference reference = (VariableReference) type;
-
-            for (int i = 0; i < variableTypes.getSize(); i++) {
-                HashMap<String, ExpressionType> scope = variableTypes.get(i);
+            for (HashMap<String, ExpressionType> scope : variableTypes) {
                 if (scope.containsKey(reference.name)) {
                     return scope.get(reference.name);
                 }
             }
+            reference.setError("Variable '" + reference.name + "' not defined.");
+            return ExpressionType.UNDEFINED;
         }
 
         if (type instanceof Operation) {
@@ -118,6 +119,42 @@ public class Checker {
         }
 
         return ExpressionType.UNDEFINED;
+    }
+
+    private void checkIfClause(IfClause ifClause) {
+        ExpressionType type = getExpressionType(ifClause.conditionalExpression);
+        if (type != ExpressionType.BOOL) {
+            ifClause.setError("If must be boolean.");
+        }
+
+        variableTypes.addFirst(new HashMap<>());
+
+        for (ASTNode child : ifClause.body) {
+            if (child instanceof Declaration) {
+                checkDeclaration((Declaration) child);
+            } else if (child instanceof IfClause) {
+                checkIfClause((IfClause) child);
+            }
+        }
+
+        variableTypes.removeFirst();
+
+        if (ifClause.elseClause != null) {
+            checkElseClause(ifClause.elseClause);
+        }
+    }
+
+    private void checkElseClause(ElseClause elseClause) {
+        variableTypes.addFirst(new HashMap<>());
+
+        for (ASTNode child : elseClause.body) {
+            if (child instanceof Declaration) {
+                checkDeclaration((Declaration) child);
+            } else if (child instanceof IfClause) {
+                checkIfClause((IfClause) child);
+            }
+        }
+        variableTypes.removeFirst();
     }
 
 
