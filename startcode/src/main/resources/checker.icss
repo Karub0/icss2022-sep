@@ -1,5 +1,3 @@
-/* test */
-
 MainColor := #ff0000;
 BaseWidth := 20px;
 
