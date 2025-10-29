@@ -1,6 +1,5 @@
 package nl.han.ica.icss.checker;
 
-import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.*;
 import nl.han.ica.icss.ast.operations.*;
@@ -19,7 +18,6 @@ public class Checker {
         variableTypes.addFirst(new HashMap<>());
 
         checkStylesheet(ast.root);
-
     }
 
     private void checkStylesheet(Stylesheet sheet) {
@@ -49,14 +47,7 @@ public class Checker {
     }
 
     private void checkVariableAssignment(VariableAssignment assignment) {
-        ExpressionType type = null;
-
-        if (assignment.expression instanceof PixelLiteral) type = ExpressionType.PIXEL;
-        else if (assignment.expression instanceof PercentageLiteral) type = ExpressionType.PERCENTAGE;
-        else if (assignment.expression instanceof ColorLiteral) type = ExpressionType.COLOR;
-        else if (assignment.expression instanceof BoolLiteral) type = ExpressionType.BOOL;
-        else if (assignment.expression instanceof ScalarLiteral) type = ExpressionType.SCALAR;
-
+        ExpressionType type = getExpressionType(assignment.expression);
         variableTypes.getFirst().put(assignment.name.name, type);
     }
 
@@ -75,15 +66,15 @@ public class Checker {
         }
     }
 
-    private ExpressionType getExpressionType(ASTNode type) {
-        if (type instanceof ColorLiteral) return ExpressionType.COLOR;
-        if (type instanceof PixelLiteral) return ExpressionType.PIXEL;
-        if (type instanceof PercentageLiteral) return ExpressionType.PERCENTAGE;
-        if (type instanceof ScalarLiteral) return ExpressionType.SCALAR;
-        if (type instanceof BoolLiteral) return ExpressionType.BOOL;
+    private ExpressionType getExpressionType(ASTNode node) {
+        if (node instanceof ColorLiteral) return ExpressionType.COLOR;
+        if (node instanceof PixelLiteral) return ExpressionType.PIXEL;
+        if (node instanceof PercentageLiteral) return ExpressionType.PERCENTAGE;
+        if (node instanceof ScalarLiteral) return ExpressionType.SCALAR;
+        if (node instanceof BoolLiteral) return ExpressionType.BOOL;
 
-        if (type instanceof VariableReference) {
-            VariableReference reference = (VariableReference) type;
+        if (node instanceof VariableReference) {
+            VariableReference reference = (VariableReference) node;
             for (HashMap<String, ExpressionType> scope : variableTypes) {
                 if (scope.containsKey(reference.name)) {
                     return scope.get(reference.name);
@@ -93,8 +84,8 @@ public class Checker {
             return ExpressionType.UNDEFINED;
         }
 
-        if (type instanceof Operation) {
-            Operation operation = (Operation) type;
+        if (node instanceof Operation) {
+            Operation operation = (Operation) node;
             ExpressionType left = getExpressionType(operation.lhs);
             ExpressionType right = getExpressionType(operation.rhs);
 
@@ -104,15 +95,25 @@ public class Checker {
             }
 
             if (operation instanceof AddOperation || operation instanceof SubtractOperation) {
-                if (left != right) {
+                if (left == right && (left == ExpressionType.PIXEL || left == ExpressionType.PERCENTAGE || left == ExpressionType.SCALAR)) {
+                    return left;
+                } else {
                     operation.setError("Operand + or - must have same type.");
                     return ExpressionType.UNDEFINED;
                 }
-                return left;
+            }
 
-            } else if (operation instanceof MultiplyOperation) {
-                if (left == ExpressionType.SCALAR) return right;
-                if (right == ExpressionType.SCALAR) return left;
+            if (operation instanceof MultiplyOperation) {
+                if (left == ExpressionType.SCALAR && (right == ExpressionType.PIXEL || right == ExpressionType.PERCENTAGE)) {
+                    return right;
+                }
+                if (right == ExpressionType.SCALAR && (left == ExpressionType.PIXEL || left == ExpressionType.PERCENTAGE)) {
+                    return left;
+                }
+                if (left == ExpressionType.SCALAR && right == ExpressionType.SCALAR) {
+                    return ExpressionType.SCALAR;
+                }
+
                 operation.setError("One operand of * must be scalar.");
                 return ExpressionType.UNDEFINED;
             }
@@ -126,18 +127,15 @@ public class Checker {
         if (type != ExpressionType.BOOL) {
             ifClause.setError("If must be boolean.");
         }
-
-        variableTypes.addFirst(new HashMap<>());
-
         for (ASTNode child : ifClause.body) {
             if (child instanceof Declaration) {
                 checkDeclaration((Declaration) child);
             } else if (child instanceof IfClause) {
                 checkIfClause((IfClause) child);
+            } else if (child instanceof VariableAssignment) {
+                checkVariableAssignment((VariableAssignment) child);
             }
         }
-
-        variableTypes.removeFirst();
 
         if (ifClause.elseClause != null) {
             checkElseClause(ifClause.elseClause);
@@ -145,20 +143,14 @@ public class Checker {
     }
 
     private void checkElseClause(ElseClause elseClause) {
-        variableTypes.addFirst(new HashMap<>());
-
         for (ASTNode child : elseClause.body) {
             if (child instanceof Declaration) {
                 checkDeclaration((Declaration) child);
             } else if (child instanceof IfClause) {
                 checkIfClause((IfClause) child);
+            } else if (child instanceof VariableAssignment) {
+                checkVariableAssignment((VariableAssignment) child);
             }
         }
-        variableTypes.removeFirst();
     }
-
-
-
-
-
 }
