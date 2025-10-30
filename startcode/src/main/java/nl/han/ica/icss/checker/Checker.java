@@ -51,6 +51,7 @@ public class Checker {
         variableTypes.getFirst().put(assignment.name.name, type);
     }
 
+    // Controleert of de waarde bij een property het juiste type heeft
     private void checkDeclaration(Declaration declaration) {
         ExpressionType type = getExpressionType(declaration.expression);
 
@@ -66,6 +67,7 @@ public class Checker {
         }
     }
 
+    // Bepaalt het type van een expressie
     private ExpressionType getExpressionType(ASTNode node) {
         if (node instanceof ColorLiteral) return ExpressionType.COLOR;
         if (node instanceof PixelLiteral) return ExpressionType.PIXEL;
@@ -84,6 +86,7 @@ public class Checker {
             return ExpressionType.UNDEFINED;
         }
 
+        // Operaties controleren
         if (node instanceof Operation) {
             Operation operation = (Operation) node;
             ExpressionType left = getExpressionType(operation.lhs);

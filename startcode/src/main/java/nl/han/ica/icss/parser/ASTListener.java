@@ -60,6 +60,7 @@ public class ASTListener extends ICSSBaseListener {
 
 	@Override
 	public void enterSelector(ICSSParser.SelectorContext ctx) {
+		// Afhankelijk van het type selector het juiste object aanmaken
 		Selector selector = null;
 		if (ctx.LOWER_IDENT() != null) {
 			selector = new TagSelector(ctx.LOWER_IDENT().getText());
@@ -135,6 +136,7 @@ public class ASTListener extends ICSSBaseListener {
 
 	@Override
 	public void enterAddSub(ICSSParser.AddSubContext ctx) {
+		// Controleer of het gaat om + of -
 		Operation operation = null;
 		if (ctx.PLUS() != null) {
 			operation = new AddOperation();
@@ -162,6 +164,7 @@ public class ASTListener extends ICSSBaseListener {
 		((ASTNode) currentContainer.peek()).addChild(operation);
 	}
 
+	// Lege methodes voor grammar regels die niets doen
 	@Override
 	public void enterSingleTerm(ICSSParser.SingleTermContext ctx) {
 
@@ -174,6 +177,7 @@ public class ASTListener extends ICSSBaseListener {
 
 	@Override
 	public void enterLiteralFactor(ICSSParser.LiteralFactorContext ctx) {
+		// Zoekt het type literal en maakt het juiste object aan
 		Literal literal = null;
 
 		if (ctx.literal().PIXELSIZE() != null) {

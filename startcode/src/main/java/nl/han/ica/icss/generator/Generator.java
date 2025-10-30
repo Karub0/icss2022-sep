@@ -26,6 +26,7 @@ public class Generator {
 		String indent = "  ".repeat(indentLevel);
 		String indent2 = "  ".repeat(indentLevel + 1);
 
+		// Voeg de selectors toe gescheiden door komma
 		for (int i = 0; i < rule.selectors.size(); i++) {
 			builder.append(indent).append(rule.selectors.get(i).toString());
 			if (i < rule.selectors.size() - 1) {
@@ -36,9 +37,11 @@ public class Generator {
 
 		for (ASTNode child : rule.body) {
 			if (child instanceof Declaration) {
+				// Genereer CSS
 				builder.append(indent2).append(generateDeclaration((Declaration) child)).append("\n");
 
 			} else if (child instanceof Stylerule) {
+				// Genereer geneste regels
 				builder.append(generateStylerule((Stylerule) child, indentLevel + 1)).append("\n");
 			}
 		}
@@ -51,6 +54,7 @@ public class Generator {
 		return declaration.property.name + ": " + literalToString(declaration.expression) + ";";
 	}
 
+	// Zet een Literal of expressie om naar een string die geldig is in CSS
 	private String literalToString(ASTNode expression) {
 		if (expression instanceof PixelLiteral) {
 			return ((PixelLiteral) expression).value + "px";

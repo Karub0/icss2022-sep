@@ -85,7 +85,7 @@ elseBody
     ;
 
 expression
-    : expression (PLUS | MIN) term          #addSub
+    : expression (PLUS | MIN) term         #addSub
     | term                                 #singleTerm
     ;
 
@@ -95,8 +95,8 @@ term
     ;
 
 factor
-    : literal                              #literalFactor
-    | CAPITAL_IDENT                        #variableReference
+    : literal                                       #literalFactor
+    | CAPITAL_IDENT                                 #variableReference
     | BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE #nestedExpression
     ;
 

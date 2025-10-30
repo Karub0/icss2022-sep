@@ -44,6 +44,7 @@ public class Evaluator implements Transform {
     private void evaluateVariableAssignment(VariableAssignment assignment) {
         Literal literal = evaluateExpression(assignment.expression);
 
+        // Controleert of variabele al in een hogere scope bestaat
         boolean updated = false;
         for (HashMap<String, Literal> scope : variableValues) {
             if (scope.containsKey(assignment.name.name)) {
@@ -96,15 +97,18 @@ public class Evaluator implements Transform {
         return null;
     }
 
+    // Zoekt de waarde van een variabele in de scope stack
     private Literal evaluateVariable(VariableReference reference) {
         for (HashMap<String, Literal> scope : variableValues) {
             if (scope.containsKey(reference.name)) {
                 return scope.get(reference.name);
             }
         }
+        // Niet gedefinieerde variabele krijgt standaardwaarde 0
         return new ScalarLiteral(0);
     }
 
+    // Bepaalt welk type operatie moet worden uitgevoerd
     private Literal evaluateOperation(Operation operation) {
         Literal left = evaluateExpression(operation.lhs);
         Literal right = evaluateExpression(operation.rhs);
@@ -121,6 +125,7 @@ public class Evaluator implements Transform {
         return null;
     }
 
+    // Voert + of - uit afhankelijk van het Literal type
     private Literal evaluateAddSub(Literal left, Literal right, boolean isAdd) {
         if (left instanceof PixelLiteral && right instanceof PixelLiteral) {
             int result = ((PixelLiteral) left).value + (isAdd ? ((PixelLiteral) right).value : -((PixelLiteral) right).value);
@@ -137,6 +142,7 @@ public class Evaluator implements Transform {
         return left;
     }
 
+    // Voert * uit met ondersteuning voor verschillende typen
     private Literal evaluateMultiply(Literal left, Literal right) {
         if (left instanceof ScalarLiteral && right instanceof ScalarLiteral) {
             int result = ((ScalarLiteral) left).value * ((ScalarLiteral) right).value;
@@ -166,12 +172,14 @@ public class Evaluator implements Transform {
         boolean conditionTrue = conditionValue instanceof BoolLiteral && ((BoolLiteral) conditionValue).value;
         variableValues.push(new HashMap<>());
 
+        // Kies het juiste blok (if of else)
         List<ASTNode> branch = conditionTrue ? ifClause.body :
                 (ifClause.elseClause != null ? ifClause.elseClause.body : null);
 
         if (branch != null) {
             for (ASTNode child : branch) {
                 if (child instanceof Declaration) {
+                    // Evalueert en bestaande property overschrijven in de rule
                     evaluateDeclaration((Declaration) child);
 
                     rule.body.removeIf(node -> node instanceof Declaration &&
