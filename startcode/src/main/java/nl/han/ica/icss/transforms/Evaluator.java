@@ -61,6 +61,7 @@ public class Evaluator implements Transform {
     private void evaluateStylerule(Stylerule rule) {
         variableValues.push(new HashMap<>());
 
+        // Doorloopt alle children van de stylerule.
         ListIterator<ASTNode> iterator = rule.getChildren().listIterator();
         while (iterator.hasNext()) {
             ASTNode child = iterator.next();
@@ -97,18 +98,18 @@ public class Evaluator implements Transform {
         return null;
     }
 
-    // Zoekt de waarde van een variabele in de scope stack
+    // Zoekt de waarde van een variable in de scope stack
     private Literal evaluateVariable(VariableReference reference) {
         for (HashMap<String, Literal> scope : variableValues) {
             if (scope.containsKey(reference.name)) {
                 return scope.get(reference.name);
             }
         }
-        // Niet gedefinieerde variabele krijgt standaardwaarde 0
+        // Niet gedefinieerde variable krijgt standaardwaarde 0
         return new ScalarLiteral(0);
     }
 
-    // Bepaalt welk type operatie moet worden uitgevoerd
+    // Bepaalt welk type operation moet worden uitgevoerd
     private Literal evaluateOperation(Operation operation) {
         Literal left = evaluateExpression(operation.lhs);
         Literal right = evaluateExpression(operation.rhs);
@@ -142,7 +143,7 @@ public class Evaluator implements Transform {
         return left;
     }
 
-    // Voert * uit met ondersteuning voor verschillende typen
+    // Voert * uit voor verschillende typen
     private Literal evaluateMultiply(Literal left, Literal right) {
         if (left instanceof ScalarLiteral && right instanceof ScalarLiteral) {
             int result = ((ScalarLiteral) left).value * ((ScalarLiteral) right).value;
@@ -172,7 +173,7 @@ public class Evaluator implements Transform {
         boolean conditionTrue = conditionValue instanceof BoolLiteral && ((BoolLiteral) conditionValue).value;
         variableValues.push(new HashMap<>());
 
-        // Kies het juiste blok (if of else)
+        // Kiest het juiste statement (if of else)
         List<ASTNode> branch = conditionTrue ? ifClause.body :
                 (ifClause.elseClause != null ? ifClause.elseClause.body : null);
 

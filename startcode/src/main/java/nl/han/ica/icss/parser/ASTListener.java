@@ -19,11 +19,9 @@ import nl.han.ica.icss.ast.selectors.TagSelector;
  * This class extracts the ICSS Abstract Syntax Tree from the Antlr Parse tree.
  */
 public class ASTListener extends ICSSBaseListener {
-	
-	//Accumulator attributes:
+
 	private AST ast;
 
-	//Use this to keep track of the parent nodes when recursively traversing the ast
 	private IHANStack<ASTNode> currentContainer;
 
 	public ASTListener() {
@@ -136,7 +134,7 @@ public class ASTListener extends ICSSBaseListener {
 
 	@Override
 	public void enterAddSub(ICSSParser.AddSubContext ctx) {
-		// Controleer of het gaat om + of -
+		// Controleert of het gaat om add of sub
 		Operation operation = null;
 		if (ctx.PLUS() != null) {
 			operation = new AddOperation();

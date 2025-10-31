@@ -67,7 +67,7 @@ public class Checker {
         }
     }
 
-    // Bepaalt het type van een expressie
+    // Bepaalt het type van een expression
     private ExpressionType getExpressionType(ASTNode node) {
         if (node instanceof ColorLiteral) return ExpressionType.COLOR;
         if (node instanceof PixelLiteral) return ExpressionType.PIXEL;
@@ -75,6 +75,7 @@ public class Checker {
         if (node instanceof ScalarLiteral) return ExpressionType.SCALAR;
         if (node instanceof BoolLiteral) return ExpressionType.BOOL;
 
+        // Controleert of de expression een variablereference is en zoekt het op in de scope
         if (node instanceof VariableReference) {
             VariableReference reference = (VariableReference) node;
             for (HashMap<String, ExpressionType> scope : variableTypes) {
@@ -86,7 +87,7 @@ public class Checker {
             return ExpressionType.UNDEFINED;
         }
 
-        // Operaties controleren
+        // Controleert of de expression een operation bevat
         if (node instanceof Operation) {
             Operation operation = (Operation) node;
             ExpressionType left = getExpressionType(operation.lhs);
@@ -106,6 +107,7 @@ public class Checker {
                 }
             }
 
+            // Controleert de multiply
             if (operation instanceof MultiplyOperation) {
                 if (left == ExpressionType.SCALAR && (right == ExpressionType.PIXEL || right == ExpressionType.PERCENTAGE)) {
                     return right;
@@ -126,6 +128,7 @@ public class Checker {
     }
 
     private void checkIfClause(IfClause ifClause) {
+        // Controleert of de conditie een boolean is
         ExpressionType type = getExpressionType(ifClause.conditionalExpression);
         if (type != ExpressionType.BOOL) {
             ifClause.setError("If must be boolean.");
@@ -140,6 +143,7 @@ public class Checker {
             }
         }
 
+        // Schakelt naar else statement als dat bestaat
         if (ifClause.elseClause != null) {
             checkElseClause(ifClause.elseClause);
         }

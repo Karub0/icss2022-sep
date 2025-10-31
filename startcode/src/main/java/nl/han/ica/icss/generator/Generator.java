@@ -54,7 +54,7 @@ public class Generator {
 		return declaration.property.name + ": " + literalToString(declaration.expression) + ";";
 	}
 
-	// Zet een Literal of expressie om naar een string die geldig is in CSS
+	// Zet een Literal of expression om naar een string in CSS
 	private String literalToString(ASTNode expression) {
 		if (expression instanceof PixelLiteral) {
 			return ((PixelLiteral) expression).value + "px";
